@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { View, Text, ActivityIndicator, FlatList, Image } from "react-native";
 
-import { images } from "@/constants/images";
-import { icons } from "@/constants/icons";
+import { images } from "../constants/images";
+import { icons } from "../constants/icons";
 
-import { fetchMovies } from "@/services/api";
-import { updateSearchCount } from "@/services/appwrite";
+import { fetchMovies } from "../services/api";
+import { updateSearchCount } from "../services/appwrite";
 
-import SearchBar from "@/components/SearchBar";
-import MovieDisplayCard from "@/components/MovieCard";
+import SearchBar from "../components/SearchBar";
+import MovieDisplayCard from "../components/MovieCard";
 
-const Search = () => {
+const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -118,8 +118,8 @@ const Search = () => {
                 {searchQuery.trim().length > 0 && searchQuery.trim().length < 3
                   ? `Type at least 3 characters to search`
                   : searchQuery.trim()
-                  ? "No movies found"
-                  : "Start typing to search for movies"}
+                    ? "No movies found"
+                    : "Start typing to search for movies"}
               </Text>
             </View>
           ) : null
@@ -129,4 +129,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default SearchScreen;

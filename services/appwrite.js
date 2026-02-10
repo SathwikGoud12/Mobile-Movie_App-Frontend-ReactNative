@@ -1,4 +1,4 @@
-import { Client, Databases, ID, Query } from "appwrite";
+import { Client, Databases, ID, Query, Permission, Role } from "appwrite";
 
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
@@ -68,6 +68,7 @@ export const updateSearchCount = async (query, movie) => {
   }
 };
 
+
 // ✅ Get trending movies (sorted by search count)
 export const getTrendingMovies = async () => {
   try {
@@ -86,6 +87,140 @@ export const getTrendingMovies = async () => {
     return result.documents;
   } catch (error) {
     console.error("Error fetching trending movies:", error);
+    return [];
+  }
+};
+
+// ========== SAVED MOVIES FUNCTIONS ==========
+
+// You'll need to create a "saved_movies" collection in Appwrite with these attributes:
+// - movie_id (string, required)
+// - title (string, required)
+// - poster_path (string, optional)
+// - backdrop_path (string, optional)
+// - vote_average (number, optional)
+// - release_date (string, optional)
+// - overview (string, optional)
+// - saved_at (datetime, required)
+
+const SAVED_MOVIES_COLLECTION_ID = "saved_movies"; // You'll need to create this collection
+
+// ✅ Save a movie
+export const saveMovie = async (movie) => {
+  try {
+    if (!validateAppwriteConfig()) {
+      console.log("Skipping save movie - Appwrite not configured");
+      return null;
+    }
+
+    // Check if already saved
+    const existing = await database.listDocuments(
+      DATABASE_ID,
+      SAVED_MOVIES_COLLECTION_ID,
+      [Query.equal("movie_id", movie.id.toString())]
+    );
+
+    if (existing.documents.length > 0) {
+      console.log("Movie already saved");
+      return existing.documents[0];
+    }
+
+    // Save the movie with permissions
+    const result = await database.createDocument(
+      DATABASE_ID,
+      SAVED_MOVIES_COLLECTION_ID,
+      ID.unique(),
+      {
+        movie_id: movie.id.toString(),
+        title: movie.title || "Unknown",
+        poster_path: movie.poster_path || "",
+        backdrop_path: movie.backdrop_path || "",
+        vote_average: movie.vote_average || 0,
+        release_date: movie.release_date || "",
+        overview: movie.overview || "",
+        saved_at: new Date().toISOString(),
+      },
+      [
+        Permission.read(Role.any()),
+        Permission.update(Role.any()),
+        Permission.delete(Role.any()),
+      ]
+    );
+
+    console.log("Movie saved successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("Error saving movie:", error);
+    throw error;
+  }
+};
+
+// ✅ Unsave a movie
+export const unsaveMovie = async (movieId) => {
+  try {
+    if (!validateAppwriteConfig()) {
+      console.log("Skipping unsave movie - Appwrite not configured");
+      return;
+    }
+
+    // Find the saved movie document
+    const result = await database.listDocuments(
+      DATABASE_ID,
+      SAVED_MOVIES_COLLECTION_ID,
+      [Query.equal("movie_id", movieId.toString())]
+    );
+
+    if (result.documents.length > 0) {
+      await database.deleteDocument(
+        DATABASE_ID,
+        SAVED_MOVIES_COLLECTION_ID,
+        result.documents[0].$id
+      );
+      console.log("Movie unsaved successfully");
+    }
+  } catch (error) {
+    console.error("Error unsaving movie:", error);
+    throw error;
+  }
+};
+
+// ✅ Check if a movie is saved
+export const isMovieSaved = async (movieId) => {
+  try {
+    if (!validateAppwriteConfig()) {
+      return false;
+    }
+
+    const result = await database.listDocuments(
+      DATABASE_ID,
+      SAVED_MOVIES_COLLECTION_ID,
+      [Query.equal("movie_id", movieId.toString())]
+    );
+
+    return result.documents.length > 0;
+  } catch (error) {
+    console.error("Error checking if movie is saved:", error);
+    return false;
+  }
+};
+
+// ✅ Get all saved movies
+export const getSavedMovies = async () => {
+  try {
+    if (!validateAppwriteConfig()) {
+      console.log("Skipping get saved movies - Appwrite not configured");
+      return [];
+    }
+
+    const result = await database.listDocuments(
+      DATABASE_ID,
+      SAVED_MOVIES_COLLECTION_ID,
+      [Query.orderDesc("saved_at"), Query.limit(100)]
+    );
+
+    return result.documents;
+  } catch (error) {
+    console.error("Error fetching saved movies:", error);
     return [];
   }
 };

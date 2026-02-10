@@ -1,5 +1,5 @@
 import { View, TextInput, Image } from "react-native";
-import { icons } from "@/constants/icons";
+import { icons } from "../constants/icons";
 
 const SearchBar = ({ placeholder, value, onChangeText, onPress }) => {
   return (
